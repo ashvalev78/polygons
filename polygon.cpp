@@ -27,11 +27,9 @@ polygon::polygon(int x, int y, int height, int width)
 //    return false;
 //}
 
-void polygon::draw(QImage &grid)
-{/*
+    /*
     for (int i = x0; i < x0 + R; i++) grid.setPixel(i, y0 + R/2 - 1, qRgb(0, 0, 0));
     for (int j = y0; j < y0 + R; j++) grid.setPixel(x0 + R/2 - 1, j, qRgb(0, 0, 0));*/
-}
 
 int polygon::getIntensityFromPic(const QImage &img) {
 //    int intensity = 0;
@@ -81,13 +79,15 @@ int polygon::getIntensityFromPic(const QImage &img) {
 //}
 
 
-bool polygon::pixelInsidePolygon(int x, int y) {
-    return ((this->getX0() <= x && (this->getX0() + this->getWidth()) >= x)
+int polygon::pixelInsidePolygon(int x, int y) {
+    if ((x0 <= x && (x0 + polyWidth) >= x)
             &&
-            (this->getY0() <= y && (this->getY0() + this->getHeight()) >= y));
+            (y0 <= y && (y0 + polyHeight) >= y)) {
+        return polyHeight;
+    } else {
+        return 0;
+    }
 }
-
-
 
 
 

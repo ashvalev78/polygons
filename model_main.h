@@ -42,12 +42,21 @@ private:
     QImage img;
     QImage grid;
     QImage res;
+
+    // The y value, from which we must start our finding.
+    int maxY;
+
     void split(int x0, int y0, int R, int P);
-    void draw(int x0, int y0, int R);
+    void draw();
 //    bool reqSplit(int x0, int y0, int R, int P);
     void process(int P);
     int getIntensityFromPic(int x0, int y0, int R);
     void formNewPic();
+    int insidePolygon(int x, int y);
+    void finder(int P);
+    int checker(int x0, int y0, int growX, int growY, int P,
+                 std::vector<polygon> &polyVector,
+                 int &maxIntensity, int &minIntensity);
 protected:
 
 public slots:

@@ -21,9 +21,8 @@ public:
     int getY0() { return y0; }
     int getIntensity() { return intensity; }
     void setIntensity(int intns) { intensity = intns; }
-    void draw(QImage &grid);
     int getIntensityFromPic(const QImage &img);
-    bool pixelInsidePolygon(int x, int y);
+    int pixelInsidePolygon(int x, int y);
 
 //    void split(const QImage &img, QImage &grid, std::vector<polygon> &polyVector, int P);
 //    void formNewPic(const std::vector<polygon> &polyVector, QImage &res);

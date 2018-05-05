@@ -30,8 +30,7 @@ SOURCES += \
 
 HEADERS += \
         model_main.h \
-    polygon.h \
-    checker.h
+    polygon.h
 
 FORMS += \
         model_main.ui
