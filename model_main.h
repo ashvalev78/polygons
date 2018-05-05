@@ -54,7 +54,7 @@ private:
     void formNewPic();
     int insidePolygon(int x, int y);
     void finder(int P);
-    int checker(int x0, int y0, int growX, int growY, int P,
+    int checker(int x0, int y0, int P,
                  std::vector<polygon> &polyVector,
                  int &maxIntensity, int &minIntensity);
 protected:

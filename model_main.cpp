@@ -94,52 +94,157 @@ void Model_main::on_spinBox_valueChanged(const QString &arg1)
     ui->label_reqPolyNum->setText(QString::number(counter));
 }
 
-int Model_main::checker(int x0, int y0, int growX, int growY, int P,
+int Model_main::checker(int x0, int y0, int P,
              std::vector<polygon> &polyVector,
              int &maxIntensity, int &minIntensity) {
-    if ((x0 + growX) < 256 && (y0 + growY) < 256) {
-        // If we have no borders
-        for (int x = (x0 + growX); x > x0; x--) {
-            for (int y = y0; y < (y0 + growY); y++) {
-                int intensity = qGray(img.pixel(x, y));
-                if (intensity < minIntensity) minIntensity = intensity;
-                if (intensity > maxIntensity) maxIntensity = intensity;
+    int growX = 0, growY = 0;
+    for (; (maxIntensity - minIntensity < P) && (growX + x0) < 256 && (growY + y0) < 256;) {
 
-                if ((maxIntensity - minIntensity) >= P) {
-                    if (y != (y0 + growY - 1)) {
-                        polygon A(x0, y0, growX, (growY - 1));
-                        polyVector.push_back(A);
-                    } else {
-                        polygon A(x0, y0, growX, growY);
-                        polyVector.push_back(A);
+        // Если у нас имеется что-то, что ограничивает наш полигон снизу,
+        // надо перестать туда двигаться, в противном случае мы можем залезть на другой полигон,
+        // либо же выйти за границы изображения
+        if (insidePolygon(x0, (y0 + growY + 1)) || (y0 + growY + 1) > 255) {
+            for (int x = (x0 + growX); x > x0; x--) {
+                for (int y = y0; y < (y0 + growY); y++) {
+                    int intensity = qGray(img.pixel(x, y));
+                    if (intensity < minIntensity) minIntensity = intensity;
+                    if (intensity > maxIntensity) maxIntensity = intensity;
+
+                    if ((maxIntensity - minIntensity) >= P) {
+                        if (y != (y0 + growY - 1)) {
+                            polygon A(x0, y0, growX, (growY - 1));
+                            polyVector.push_back(A);
+                            maxIntensity = 0;
+                            minIntensity = 255;
+                            return (y0 + growY - 1);
+                        } else {
+                            polygon A(x0, y0, growX, growY);
+                            polyVector.push_back(A);
+                        }
+                        maxIntensity = 0;
+                        minIntensity = 255;
+                        // Возвращаем высоту полученного полигона, чтобы впоследствии начать работать под ним.
+                        return (y0 + growY);
                     }
-                    maxIntensity = 0;
-                    minIntensity = 255;
-                    return (y0 + growY);
                 }
             }
+            growX++;
+        } else if ((x0 + growX + 1) > 255) {
+            // Единственное, что нас может ограничить справа - естественный край изображения,
+            // поскольку по данному алгоритму невозможно составить такой полигон,который перекрывал бы другой, находящийся левее него.
+            for (int x = (x0 + growX); x > x0; x--) {
+                for (int y = y0; y < (y0 + growY); y++) {
+                    int intensity = qGray(img.pixel(x, y));
+                    if (intensity < minIntensity) minIntensity = intensity;
+                    if (intensity > maxIntensity) maxIntensity = intensity;
+
+                    if ((maxIntensity - minIntensity) >= P) {
+                        if (y != (y0 + growY - 1)) {
+                            polygon A(x0, y0, growX, (growY - 1));
+                            polyVector.push_back(A);
+                            maxIntensity = 0;
+                            minIntensity = 255;
+                            return (y0 + growY - 1);
+                        } else {
+                            polygon A(x0, y0, growX, growY);
+                            polyVector.push_back(A);
+                        }
+                        maxIntensity = 0;
+                        minIntensity = 255;
+                        // Возвращаем высоту полученного полигона, чтобы впоследствии начать работать под ним.
+                        return (y0 + growY);
+                    }
+                }
+            }
+            growY++;
+        } else {
+            // Если у нас нет ограничений слева или снизу, будет работать обычный алгоритм, увеличивающий полигон по ОХ и ОУ.
+            for (int x = (x0 + growX); x > x0; x--) {
+                for (int y = y0; y < (y0 + growY); y++) {
+                    int intensity = qGray(img.pixel(x, y));
+                    if (intensity < minIntensity) minIntensity = intensity;
+                    if (intensity > maxIntensity) maxIntensity = intensity;
+
+                    if ((maxIntensity - minIntensity) >= P) {
+                        if (y != (y0 + growY - 1)) {
+                            polygon A(x0, y0, growX, (growY - 1));
+                            polyVector.push_back(A);
+                            maxIntensity = 0;
+                            minIntensity = 255;
+                            return (y0 + growY - 1);
+                        } else {
+                            polygon A(x0, y0, growX, growY);
+                            polyVector.push_back(A);
+                        }
+                        maxIntensity = 0;
+                        minIntensity = 255;
+                        // Возвращаем высоту полученного полигона, чтобы впоследствии начать работать под ним.
+                        return (y0 + growY);
+                    }
+                }
+            }
+            growY++;
+            growX++;
         }
     }
-    //bottom border
-    if (insidePolygon(x0, (y0 + growY + 1)) || (y0 + growY + 1) > 255) {
-        int q = checker(x0, y0, (growX + 1), growY, P, &polyVector, &maxIntensity, &minIntensity);
-    } else if ((x0 + growX + 1) > 255) { // right border
-        int q = checker(x0, y0, growX, (growY + 1), P, &polyVector, &maxIntensity, &minIntensity);
-    } else { // no borders
-        int q = checker(x0, y0, (growX + 1), (growY + 1), P, &polyVector, &maxIntensity, &minIntensity);
-    }
 
+    polygon A(x0, y0, growX, growY);
+    polyVector.push_back(A);
     return (y0 + growY);
+
+//    if ((x0 + growX) < 256 && (y0 + growY) < 256) {
+        // If we have no borders
+//        for (int x = (x0 + growX); x > x0; x--) {
+//            for (int y = y0; y < (y0 + growY); y++) {
+//                int intensity = qGray(img.pixel(x, y));
+//                if (intensity < minIntensity) minIntensity = intensity;
+//                if (intensity > maxIntensity) maxIntensity = intensity;
+
+//                if ((maxIntensity - minIntensity) >= P) {
+//                    if (y != (y0 + growY - 1)) {
+//                        polygon A(x0, y0, growX, (growY - 1));
+//                        polyVector.push_back(A);
+//                    } else {
+//                        polygon A(x0, y0, growX, growY);
+//                        polyVector.push_back(A);
+//                    }
+//                    maxIntensity = 0;
+//                    minIntensity = 255;
+//                    return (y0 + growY);
+//                }
+//            }
+//        }
+//    }
+//    qDebug() << "x0 = " << x0 << " y0 = " << y0;
+//    qDebug() << " = " << x0 << " y0 = " << y0;
+//    qDebug() << "x0 = " << x0 << " y0 = " << y0;
+
+    // bottom border
+//    if (insidePolygon(x0, (y0 + growY + 1)) || (y0 + growY + 1) > 255) {
+//        return checker(x0, y0, (growX + 1), growY, P, polyVector, maxIntensity, minIntensity);
+//    } else if ((x0 + growX + 1) > 255) { // right border
+//        return checker(x0, y0, growX, (growY + 1), P, polyVector, maxIntensity, minIntensity);
+//    }
+//    // no borders
+//    return checker(x0, y0, (growX + 1), (growY + 1), P, polyVector, maxIntensity, minIntensity);
+
+//    polygon A(x0, y0, growX, growY);
+//    polyVector.push_back(A);
+//    return (y0 + growY);
 }
 
 void  Model_main::finder(int P) {
+    int minInt = 255, maxInt = 0;
     for (int x = 0; x < 256; x++) {
         for (int y = 0; y < 256;) {
             int height = insidePolygon(x,y);
             if (height) {
                 y += height;
             } else {
-                y += checker(x, y, 0, 0, P, &polyVector, 0, 255);
+                y += checker(x, y, P, polyVector, maxInt, minInt);
+//                draw();
+//                qDebug() <<"OK";
+//                qDebug() << polyVector.size();
             }
         }
     }
@@ -167,20 +272,21 @@ void  Model_main::finder(int P) {
 void Model_main::draw()
 {
     for (int i = 0; i < polyVector.size(); i++) {
+//        qDebug() << polyVector[i].getX0() << " sdkjgskg " << polyVector[i].getWidth() << " jgkj " << polyVector[i].getHeight();
         // Top
-        for (int j = polyVector[i].getX0(); j < (polyVector[i].getWidth() + polyVector[i].getX0()); j++) {
+        for (int j = polyVector[i].getX0(); j < (polyVector[i].getWidth() - 1 + polyVector[i].getX0()); j++) {
             grid.setPixel(j, polyVector[i].getY0(), qRgb(0, 0, 0));
         }
         // Bottom
-        for (int j = polyVector[i].getX0(); j < (polyVector[i].getWidth() + polyVector[i].getX0()); j++) {
+        for (int j = polyVector[i].getX0(); j < (polyVector[i].getWidth() - 1 + polyVector[i].getX0()); j++) {
             grid.setPixel(j, (polyVector[i].getY0() + polyVector[i].getHeight()), qRgb(0, 0, 0));
         }
         // Left
-        for (int j = polyVector[i].getY0(); j < (polyVector[i].getHeight() + polyVector[i].getY0()); j++) {
+        for (int j = polyVector[i].getY0(); j < (polyVector[i].getHeight() - 1 + polyVector[i].getY0()); j++) {
             grid.setPixel(j, polyVector[i].getX0(), qRgb(0, 0, 0));
         }
         // Right
-        for (int j = polyVector[i].getY0(); j < (polyVector[i].getHeight() + polyVector[i].getY0()); j++) {
+        for (int j = polyVector[i].getY0(); j < (polyVector[i].getHeight() - 1 + polyVector[i].getY0()); j++) {
             grid.setPixel(j, (polyVector[i].getX0() + polyVector[i].getWidth()), qRgb(0, 0, 0));
         }
     }

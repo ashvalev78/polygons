@@ -1,6 +1,6 @@
 #include "polygon.h"
 
-polygon::polygon(int x, int y, int height, int width)
+polygon::polygon(int x, int y, int width, int height)
 {
     x0 = x;
     y0 = y;
