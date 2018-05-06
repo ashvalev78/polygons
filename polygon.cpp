@@ -80,9 +80,9 @@ int polygon::getIntensityFromPic(const QImage &img) {
 
 
 int polygon::pixelInsidePolygon(int x, int y) {
-    if ((x0 <= x && (x0 + polyWidth) >= x)
+    if ((x0 <= x && (x0 + polyWidth - 1) >= x)
             &&
-            (y0 <= y && (y0 + polyHeight) >= y)) {
+            (y0 <= y && (y0 + polyHeight - 1) >= y)) {
         return polyHeight;
     } else {
         return 0;
