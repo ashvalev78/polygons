@@ -10,6 +10,7 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QPushButton>
+#include <QPainter>
 
 namespace Ui {
 class Model_main;
@@ -42,6 +43,7 @@ private:
     QImage img;
     QImage grid;
     QImage res;
+    std::vector<polygon> *render;
 
     // The y value, from which we must start our finding.
     int maxY;
@@ -55,8 +57,8 @@ private:
     int insidePolygon(int x, int y);
     void finder(int P);
     int checker(int x0, int y0, int P,
-                 std::vector<polygon> &polyVector,
-                 int &maxIntensity, int &minIntensity);
+                 std::vector<polygon> &polyVector);
+
 protected:
 
 public slots:

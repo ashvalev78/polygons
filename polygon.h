@@ -14,7 +14,7 @@ private:
     intensity; // polygon intensivity
 public:
 
-    polygon(int x0, int y0, int width, int height);
+    polygon(int x0, int y0, int width, int height, int intens);
     int getHeight() { return polyHeight; }
     int getWidth() { return polyWidth; }
     int getX0() { return x0; }

@@ -1,11 +1,12 @@
 #include "polygon.h"
 
-polygon::polygon(int x, int y, int width, int height)
+polygon::polygon(int x, int y, int width, int height, int intens)
 {
     x0 = x;
     y0 = y;
     polyHeight = height;
     polyWidth = width;
+    intensity = intens;
 //    R = r;
 }
 

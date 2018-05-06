@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>790</width>
-    <height>545</height>
+    <width>797</width>
+    <height>641</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,14 +25,14 @@
            <widget class="QLabel" name="label_pic_src">
             <property name="minimumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="text">
@@ -55,14 +55,14 @@
            <widget class="QLabel" name="label_pic_grid">
             <property name="minimumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="text">
@@ -94,14 +94,14 @@
            <widget class="QLabel" name="label_pic_res">
             <property name="minimumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>250</width>
-              <height>250</height>
+              <width>256</width>
+              <height>256</height>
              </size>
             </property>
             <property name="text">
@@ -221,7 +221,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>790</width>
+     <width>797</width>
      <height>21</height>
     </rect>
    </property>
