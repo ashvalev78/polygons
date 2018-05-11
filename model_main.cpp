@@ -46,12 +46,8 @@ void Model_main::process(int P)
     //очистить вектор полигонов
     polyVector.clear();
     //создать сетку
-//    polygon poly(0, 0, 256);
-//    polyVector.push_back(poly);
-//    poly.split(img, grid, polyVector, P);
     finder(P);
-   draw();
-
+    draw();
 //    не работает????
 //    qDebug() << (*poly.LD).getX0();
     //отобразить сетку
@@ -62,6 +58,15 @@ void Model_main::process(int P)
     on_spinBox_valueChanged(QString::number(ui->spinBox->value()));
     //формируем результирующее изображение и отображаем его
    formNewPic();
+   int summ = 0;
+   for (int i = 0; i < 256; i++) {
+       for (int j = 0; j < 256; j++) {
+           summ += pow((qGray(img.pixel(i,j)) - qGray(res.pixel(i,j))),2);
+       }
+   }
+   double result = sqrt(summ/(256*256));
+
+   ui->label_SKO->setText(QString::number(result));
 }
 
 void Model_main::on_horizontalSlider_threshold_actionTriggered()
@@ -87,6 +92,9 @@ void Model_main::on_spinBox_valueChanged(const QString &arg1)
     int polySize = arg1.toInt();
     int counter = 0;
     for (int i = 0; i < polyVector.size(); i++) {
+        if (polyVector[i].getHeight() <= 1)
+            qDebug() << "height = " << polyVector[i].getHeight();
+        qDebug() << "width = " << polyVector[i].getWidth();
         if ((polyVector[i].getHeight() * polyVector[i].getWidth()) == polySize) {
             counter++;
         }
@@ -106,7 +114,6 @@ int Model_main::checker(int x0, int y0, int P,
     {
         progress = false;
         if(x < maxX){
-            x++; progress++;
             for(int t = 0; y0+t <= y; t++)
             {
                 int intensity = qGray(img.pixel(x, y0+t));
@@ -119,9 +126,9 @@ int Model_main::checker(int x0, int y0, int P,
                     return y-y0+1;
                 }
              }
+            x++; progress++;
         }
         if(y < maxY){
-            y++; progress++;
             for(int t = 0; x0+t <= x; t++)
             {
                 int intensity = qGray(img.pixel(x0+t, y));
@@ -134,6 +141,7 @@ int Model_main::checker(int x0, int y0, int P,
                     return y-y0+1;
                 }
              }
+            y++; progress++;
         }
     }
     polyVector.push_back(polygon(x0, y0, x-x0+1, y-y0+1, summ/count));

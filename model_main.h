@@ -44,7 +44,7 @@ private:
     QImage grid;
     QImage res;
     std::vector<polygon> *render;
-
+    double SKO;
     // The y value, from which we must start our finding.
     int maxY;
 
