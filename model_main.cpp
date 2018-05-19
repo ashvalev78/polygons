@@ -41,23 +41,45 @@ void Model_main::on_pushButton_load_clicked()
     ui->label_pic_src->setPixmap(QPixmap::fromImage(img));
 }
 
-void Model_main::process(int P)
+void Model_main::process()
 {
-    //очистить вектор полигонов
-    polyVector.clear();
-    //создать сетку
-    finder(P);
-    draw();
-//    не работает????
-//    qDebug() << (*poly.LD).getX0();
-    //отобразить сетку
+    std::vector<polygon> polyVector = (*renderVector[P]);
+    for (int i = 0; i < (*renderVector[P]).size(); i++) {
+
+        int x0 = (*renderVector[P])[i].getX0();
+        int y0 = (*renderVector[P])[i].getY0();
+        int width = (*renderVector[P])[i].getWidth();
+        int height = (*renderVector[P])[i].getHeight();
+
+        QPainter painter(&grid);
+        QPolygon p;
+        p << QPoint(x0,y0) << QPoint(x0+width-1,y0) << QPoint(x0+width-1,y0+height-1) << QPoint(x0,y0+height-1);
+        painter.drawPolygon(p);
+
+        int intensity = polyVector[i].getIntensity();
+        for (int k = x0; k < x0 + polyVector[i].getWidth(); k++) {
+            for (int j = y0; j < y0 + polyVector[i].getHeight(); j++) {
+                res.setPixel(k, j, qRgb(intensity, intensity, intensity));
+            }
+        }
+
+    }
+
     ui->label_pic_grid->setPixmap(QPixmap::fromImage(grid));
+    if (P == 0) grid.fill(qRgb(0, 0, 0));
+
+
+//    std::vector<polygon> polyVector = *renderVector[P];
+    ui->label_pic_res->setPixmap(QPixmap::fromImage(res));
+//    draw();
+//    не работает????
+    //отобразить сетку
     //отобразить количество полигонов
-    ui->label_polyNum->setText(QString::number(polyVector.size()));
+    ui->label_polyNum->setText(QString::number(renderVector[P]->size()));
     //отобразить количество полигонов заданного размера
     on_spinBox_valueChanged(QString::number(ui->spinBox->value()));
     //формируем результирующее изображение и отображаем его
-   formNewPic();
+//    formNewPic();
    int summ = 0;
    for (int i = 0; i < 256; i++) {
        for (int j = 0; j < 256; j++) {
@@ -73,8 +95,12 @@ void Model_main::on_horizontalSlider_threshold_actionTriggered()
 {
     grid.fill(qRgb(255, 255, 255));
     res.fill(qRgb(255, 255, 255));
-    int P = ui->horizontalSlider_threshold->value();
-    process(P);
+    P = ui->horizontalSlider_threshold->value();
+    process();
+    if (P == 0) {
+        grid.fill(qRgb(0,0,0));
+    }
+
     ui->spinBox_threshold->setValue(P);
 }
 
@@ -82,19 +108,20 @@ void Model_main::on_spinBox_threshold_valueChanged(const QString &arg1)
 {
     grid.fill(qRgb(255,255,255));
     res.fill(qRgb(255, 255, 255));
-    int P = arg1.toInt();
-    process(P);
+    P = arg1.toInt();
+    process();
+    if (P == 0) {
+        grid.fill(qRgb(0,0,0));
+    }
     ui->horizontalSlider_threshold->setValue(P);
 }
 
 void Model_main::on_spinBox_valueChanged(const QString &arg1)
 {
+    std::vector<polygon> polyVector = *renderVector[P];
     int polySize = arg1.toInt();
     int counter = 0;
     for (int i = 0; i < polyVector.size(); i++) {
-        if (polyVector[i].getHeight() <= 1)
-            qDebug() << "height = " << polyVector[i].getHeight();
-        qDebug() << "width = " << polyVector[i].getWidth();
         if ((polyVector[i].getHeight() * polyVector[i].getWidth()) == polySize) {
             counter++;
         }
@@ -102,12 +129,28 @@ void Model_main::on_spinBox_valueChanged(const QString &arg1)
     ui->label_reqPolyNum->setText(QString::number(counter));
 }
 
-int Model_main::checker(int x0, int y0, int P,
+void Model_main::render() {
+    for (int i = 0; i < renderVector.size(); i++) {
+        delete renderVector[i];
+    }
+    renderVector.clear();
+    for (int i = 0; i < 256; i++) {
+        std::vector<polygon> *A = new std::vector<polygon>;
+        renderVector.push_back(A);
+    }
+    for (int i = 0; i < 256; i++) {
+        P = i;
+        renderVector[i] = finder();
+    }
+}
+
+int Model_main::checker(int x0, int y0,
              std::vector<polygon> &polyVector) {
+
     int x = x0, y= y0;
     int maxIntensity = 0, minIntensity = 255;
     int maxX = 255; int maxY = y0;
-    while(maxY<255 && !insidePolygon(x0, maxY+1)) maxY++;
+    while(maxY<255 && !insidePolygon(x0, maxY+1, polyVector)) maxY++;
     int summ = qGray(img.pixel(x0, y0)), count = 1;
     bool progress = true;
     while(progress)
@@ -148,78 +191,111 @@ int Model_main::checker(int x0, int y0, int P,
     return y-y0+1;
 }
 
-void  Model_main::finder(int P) {
+std::vector<polygon>* Model_main::finder() {
+    timeDiff[P] = clock();
+    std::vector<polygon> *polyVector = new std::vector<polygon>;
     for (int x = 0; x < 256; x++) {
         for (int y = 0; y < 256;) {
-            int height = insidePolygon(x,y);
+
+            int height = insidePolygon(x,y, *polyVector);
             if (height) {
                 y += height;
             } else {
-                y += checker(x, y, P, polyVector);
-//                draw();
-//                qDebug() <<"OK";
-//                qDebug() << polyVector.size();
+                y += checker(x, y, *polyVector);
             }
         }
     }
+    timeDiff[P] = clock() - timeDiff[P];
+    return polyVector;
 }
 
-//void Model_main::split(int x0, int y0, int R, int P)
-//{
-//    polygon poly(x0, y0, R);
-//    if (poly.reqSplit(img, P)) {
-//        poly.isEmpty = false;
-//        poly.draw(grid);
-//        for (int x = x0; x <= x0 + R/2; x += R/2) {
-//            for (int y = y0; y <= y0 + R/2; y += R/2) {
-//                split(x, y, R/2, P);
-//            }
-//        }
-//    } else {
-//        poly.setIntensity(poly.getIntensityFromPic(img));
-//    }
-//    polyVector.push_back(poly);
-//}
+int Model_main::insidePolygon(int x, int y, std::vector<polygon> &polyVector) {
+//    if (P == 0) return 0;
+//    if (P < 25) return 0;
+//    if (polyVector.size() % 100 == 0)
+//        qDebug() << polyVector.size();
 
-void Model_main::draw()
-{
     for (int i = 0; i < polyVector.size(); i++) {
-
-        int x0 = polyVector[i].getX0();
-        int y0 = polyVector[i].getY0();
-        int width = polyVector[i].getWidth();
-        int height = polyVector[i].getHeight();
-
-        QPainter painter(&grid);
-        QPolygon p;
-        p << QPoint(x0,y0) << QPoint(x0+width-1,y0) << QPoint(x0+width-1,y0+height-1) << QPoint(x0,y0+height-1);
-        painter.drawPolygon(p);
-
-
-    }
-}
-
-
-
-int Model_main::insidePolygon(int x, int y) {
-    for (int i = 0; i < polyVector.size(); i++) {
-        if (polyVector[i].pixelInsidePolygon(x, y)) return polyVector[i].getHeight();
+                if (polyVector[i].pixelInsidePolygon(x, y)) {
+                    return polyVector[i].getHeight();
+                }
     }
     return 0;
 }
 
-void Model_main::formNewPic()
+void Model_main::on_processButton_clicked()
 {
-//    qDebug() << polyVector[polyVector.size() - 1].getR() << polyVector[polyVector.size() - 2].getR() << polyVector[polyVector.size() - 3].getR() << polyVector[polyVector.size() - 4].getR();
-    for (int k = 0; k < polyVector.size(); k++) {
-        int x0 = polyVector[k].getX0();
-        int y0 = polyVector[k].getY0();
-        int intensity = polyVector[k].getIntensity();
-        for (int i = x0; i < x0 + polyVector[k].getWidth(); i++) {
-            for (int j = y0; j < y0 + polyVector[k].getHeight(); j++) {
-                res.setPixel(i, j, qRgb(intensity, intensity, intensity));
+    render();
+    process();
+}
+
+void Model_main::on_pushButton_clicked()
+{
+    std::vector<polygon> *polyVector = new std::vector<polygon>;
+    polyVector = renderVector[P];
+    std::ofstream compressFile("C:/qtProjects/files/compressFile.txt");
+    for (int i = 0; i < polyVector->size(); i++) {
+        compressFile << static_cast<char>((*polyVector)[i].getX0());
+        compressFile << static_cast<char>((*polyVector)[i].getY0());
+        compressFile << static_cast<char>((*polyVector)[i].getWidth() - 1);
+        compressFile << static_cast<char>((*polyVector)[i].getHeight() - 1);
+        compressFile << static_cast<char>((*polyVector)[i].getIntensity());
+    }
+    compressFile.close();
+}
+
+
+
+void Model_main::on_loadButton_clicked()
+{
+    img.fill(qRgb(255, 255, 255));
+    std::ifstream compFile("C:/qtProjects/files/compressFile.txt");
+//    std::string line;
+//    if (compFile.open(QIODevice::ReadOnly)) {
+//        line = compFile.readLine();
+//    }
+//    qDebug() << line;
+    compFile.seekg(0, std::ios::end);
+    int length = compFile.tellg();
+    char line[length];
+    compFile.seekg(0,std::ios::beg);
+    compFile.read(line,length);
+    int x0 = 0, y0 = 0, width = 0, height = 0, intensity = 0;
+    int x = 1;
+    for (int i = 0; i < length; i++) {
+        int k = (unsigned char)(line[i]);
+    }
+//    std::ofstream compressFile("C:/qtProjects/files/compressFile.txt");
+//    for (int i = 0; i < 1; i++) {
+//        compressFile << line[0];
+//        compressFile << line[1];
+//        compressFile << line[2];
+//        compressFile << line[3];
+//        compressFile << line[4];
+//    }
+//    compressFile.close();
+    for (int i = 0; i < 0; i++) {
+//        if (x == 6) x = 1;
+//        if (x == 1) x0 = int(line[i]);
+//        if (x == 2) y0 = int(line[i]);
+//        if (x == 3) width = int(line[i]) + 1;
+//        if (x == 4) height = int(line[i]) + 1;
+//        if (x == 5) intensity = int(line[i]);
+//        qDebug() << int(line[i]);
+
+        x++;
+
+        for (int k = x0; k < x0 + width; k++) {
+            for (int j = y0; j < y0 + height; j++) {
+                img.setPixel(k, j, qRgb(intensity, intensity, intensity));
             }
         }
+        ui->label_pic_src->setPixmap(QPixmap::fromImage(img));
+
+//        if (char(ch) != '/n') {
+////            qDebug() << char(ch);
+//            qDebug() << ch;
+//        }
     }
-    ui->label_pic_res->setPixmap(QPixmap::fromImage(res));
+    compFile.close();
 }
