@@ -210,10 +210,8 @@ std::vector<polygon>* Model_main::finder() {
 }
 
 int Model_main::insidePolygon(int x, int y, std::vector<polygon> &polyVector) {
-//    if (P == 0) return 0;
-//    if (P < 25) return 0;
-//    if (polyVector.size() % 100 == 0)
-//        qDebug() << polyVector.size();
+    if (P == 0) return 0;
+    if (P < 100) return 0;
 
     for (int i = 0; i < polyVector.size(); i++) {
                 if (polyVector[i].pixelInsidePolygon(x, y)) {
@@ -233,14 +231,26 @@ void Model_main::on_pushButton_clicked()
 {
     std::vector<polygon> *polyVector = new std::vector<polygon>;
     polyVector = renderVector[P];
-    std::ofstream compressFile("C:/qtProjects/files/compressFile.txt");
+    QFile compressFile("C:/qtProjects/files/compressFile.txt");
+    if (!compressFile.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+    QByteArray dataArray;
     for (int i = 0; i < polyVector->size(); i++) {
-        compressFile << static_cast<char>((*polyVector)[i].getX0());
-        compressFile << static_cast<char>((*polyVector)[i].getY0());
-        compressFile << static_cast<char>((*polyVector)[i].getWidth() - 1);
-        compressFile << static_cast<char>((*polyVector)[i].getHeight() - 1);
-        compressFile << static_cast<char>((*polyVector)[i].getIntensity());
+        dataArray += char((*polyVector)[i].getX0());
+        dataArray += char((*polyVector)[i].getY0());
+        dataArray += char((*polyVector)[i].getWidth() - 1);
+        dataArray += char((*polyVector)[i].getHeight() - 1);
+        dataArray += char((*polyVector)[i].getIntensity());
+        if ((*polyVector)[i].getX0() + (*polyVector)[i].getWidth() > 256 || (*polyVector)[i].getY0() + (*polyVector)[i].getHeight() > 256)
+            qDebug() << "fuck me";
+
+//        dataArray.push_back((*polyVector)[i].getX0());
+//        dataArray.push_back((*polyVector)[i].getY0());
+//        dataArray.push_back((*polyVector)[i].getWidth() - 1);
+//        dataArray.push_back((*polyVector)[i].getHeight() - 1);
+//        dataArray.push_back((*polyVector)[i].getIntensity());
     }
+    compressFile.write(dataArray);
     compressFile.close();
 }
 
@@ -248,54 +258,41 @@ void Model_main::on_pushButton_clicked()
 
 void Model_main::on_loadButton_clicked()
 {
-    img.fill(qRgb(255, 255, 255));
-    std::ifstream compFile("C:/qtProjects/files/compressFile.txt");
-//    std::string line;
-//    if (compFile.open(QIODevice::ReadOnly)) {
-//        line = compFile.readLine();
-//    }
-//    qDebug() << line;
-    compFile.seekg(0, std::ios::end);
-    int length = compFile.tellg();
-    char line[length];
-    compFile.seekg(0,std::ios::beg);
-    compFile.read(line,length);
-    int x0 = 0, y0 = 0, width = 0, height = 0, intensity = 0;
+//    img.fill(qRgb(255, 255, 255));
+    QFile compFile("C:/qtProjects/files/compressFile.txt");
+    if (!compFile.open(QIODevice::ReadOnly))
+        return;
+
+    QByteArray line = compFile.readAll();
+    int x0, y0, width, height, intensity;
     int x = 1;
-    for (int i = 0; i < length; i++) {
-        int k = (unsigned char)(line[i]);
-    }
-//    std::ofstream compressFile("C:/qtProjects/files/compressFile.txt");
-//    for (int i = 0; i < 1; i++) {
-//        compressFile << line[0];
-//        compressFile << line[1];
-//        compressFile << line[2];
-//        compressFile << line[3];
-//        compressFile << line[4];
-//    }
-//    compressFile.close();
-    for (int i = 0; i < 0; i++) {
-//        if (x == 6) x = 1;
-//        if (x == 1) x0 = int(line[i]);
-//        if (x == 2) y0 = int(line[i]);
-//        if (x == 3) width = int(line[i]) + 1;
-//        if (x == 4) height = int(line[i]) + 1;
-//        if (x == 5) intensity = int(line[i]);
-//        qDebug() << int(line[i]);
 
-        x++;
+    for (int i = 0; i < line.length(); i++) {
+        if (x == 6) x = 1;
+        if (x == 1) x0 = (int)(unsigned char)line[i];
+        if (x == 2) y0 = (int)(unsigned char)line[i];
+        if (x == 3) width = 1 + (int)(unsigned char)line[i];
+        if (x == 4) height = 1 + (int)(unsigned char)line[i];
+        if (x == 5) intensity = (int)(unsigned char)line[i];
 
-        for (int k = x0; k < x0 + width; k++) {
-            for (int j = y0; j < y0 + height; j++) {
-                img.setPixel(k, j, qRgb(intensity, intensity, intensity));
+        if (x == 5) {
+            for (int k = x0; k < x0 + width; k++) {
+                for (int j = y0; j < y0 + height; j++) {
+//                    qDebug() << k << " " << j << " " << width << " " << height;
+                    if (k > 256 || j > 256)  qDebug() << x0 << " " << y0 << " " << width << " " << height << " " << intensity;
+                    else
+                        img.setPixel(k, j, qRgb(intensity, intensity, intensity));
+                }
             }
         }
-        ui->label_pic_src->setPixmap(QPixmap::fromImage(img));
+
+        x++;
 
 //        if (char(ch) != '/n') {
 ////            qDebug() << char(ch);
 //            qDebug() << ch;
 //        }
     }
+    ui->label_pic_src->setPixmap(QPixmap::fromImage(img));
     compFile.close();
 }
